@@ -1,17 +1,15 @@
 --[[
-    Обход системы ключей. Сразу эмулируется успешная проверка,
-    интерфейс ввода ключа и анимация загрузки пропущены.
-    script_key присваивается фиктивное значение.
+    Полный обход ключевой системы HoHo Hub.
+    Интерфейс и проверка лицензии полностью пропущены,
+    script_key задаётся фиктивно, сразу выполняется основной скрипт.
+    Ссылка на главный скрипт взята из публичного репозитория,
+    при необходимости замените на актуальную.
 --]]
 local GameId = game.GameId
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
+local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
-local Debris = game:GetService("Debris")
-local StarterGui = game:GetService("StarterGui")
-local ContentProvider = game:GetService("ContentProvider")
 
 repeat task.wait() until game:IsLoaded() and Players.LocalPlayer
 
@@ -74,20 +72,29 @@ if not isSupport then
 	wait(9e9)
 end
 
--- Обход проверки ключа
-local bypass_key = "cracked_key_0000-0000-0000-0000" -- любое значение
-script_key = bypass_key
-getfenv(0).script_key = bypass_key
-getfenv(1).script_key = bypass_key
-getgenv().script_key = bypass_key
+-- Обход ключа: присвоение фиктивной лицензии и загрузка основного кода
+script_key = "cracked"
+getfenv(0).script_key = script_key
+getfenv(1).script_key = script_key
+getgenv().script_key = script_key
+writefile("HohoKeyV4.txt", script_key)
 
-writefile("HohoKeyV4.txt", bypass_key)
+-- Загрузка главного хаба напрямую (публичная ссылка, может потребоваться замена)
+local mainScriptUrl = "https://raw.githubusercontent.com/acsu123/HohoV2/main/HohoMain.lua"
+local success, result = pcall(function()
+	local mainCode = game:HttpGet(mainScriptUrl)
+	loadstring(mainCode)()
+end)
 
--- Запрос низкопроизводительного режима пропущен, устанавливаем значение по умолчанию
-_G.lowend_device = nil
-
---[[ 
-    Дальнейшее выполнение основного скрипта должно произойти 
-    через глобальную переменную script_key, поэтому после её 
-    установки всё готово.
---]]
+if not success then
+	-- Резервный вариант – попытка получить скрипт через Luarmor API с фейковым ключом
+	local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
+	api.script_id = isSupport
+	local fakeKey = "00000000-0000-0000-0000-000000000000"
+	local scriptBody = api:GetScript(fakeKey) -- может не сработать
+	if scriptBody then
+		loadstring(scriptBody)()
+	else
+		warn("Не удалось загрузить основной скрипт. Проверьте URL.")
+	end
+end
