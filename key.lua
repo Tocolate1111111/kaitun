@@ -1,13 +1,16 @@
 --[[
-    HoHo Hub Key Bypass - кнопки активны, ключ уже введён.
-    Ключ "bypass_key_0000" работает всегда.
-    При нажатии "SUBMIT KEY" или Enter в поле ввода скрипт сразу пройдёт проверку.
+    HoHo Hub Key Bypass Hoàn Chỉnh.
+    Giao diện giữ nguyên, tất cả nút đều hoạt động.
+    Nhập bất kỳ ký tự nào vào ô key, bấm "SUBMIT KEY" hoặc Enter,
+    hệ thống tự động vượt qua kiểm tra và tải Hub chính.
 --]]
 local GameId = game.GameId
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
 local CoreGui = game:GetService("CoreGui")
+local Debris = game:GetService("Debris")
 local StarterGui = game:GetService("StarterGui")
 local ContentProvider = game:GetService("ContentProvider")
 
@@ -46,16 +49,16 @@ if not isSupport then
 	wait(9e9)
 end
 
+-- Khởi tạo UI đầy đủ (giống hệt bản gốc nhưng tinh gọn)
 INFO_DOT25_QUAD = TweenInfo.new(.25, Enum.EasingStyle.Quad)
 function CoreGuiAdd(gui) repeat wait() until pcall(function() gui.Parent = CoreGui end) end
 PreloadID = {"rbxassetid://4560909609", "rbxassetid://12187376174"}
-UI_LOCK = false  -- разблокируем hover и клики
+UI_LOCK = false
 
--- Генерация UI (сокращённо, но полностью рабочее)
 HOHO_Passcheck = Instance.new("ScreenGui")
 HOHO_Passcheck.IgnoreGuiInset = true
 HOHO_Passcheck.ResetOnSpawn = false
-HOHO_Passcheck.Name = "Hоhо_раssсhесk"
+HOHO_Passcheck.Name = "HohoPassCheck"
 HOHO_Passcheck.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 HOHO_Passcheck.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 CoreGuiAdd(HOHO_Passcheck)
@@ -63,205 +66,199 @@ HOHO_Passcheck.Enabled = true
 
 INTRO = Instance.new("CanvasGroup")
 INTRO.BorderSizePixel = 0
-INTRO.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-INTRO.AnchorPoint = Vector2.new(0.5, 0.5)
-INTRO.Size = UDim2.new(0.455, 0, 0.462, 0)
+INTRO.BackgroundColor3 = Color3.fromRGB(30,30,30)
+INTRO.AnchorPoint = Vector2.new(0.5,0.5)
+INTRO.Size = UDim2.new(0.455,0,0.462,0)
 INTRO.ZIndex = 990
 INTRO.Name = "INTRO"
-INTRO.Position = UDim2.new(0.5, 0, 0.5, 0)
-INTRO.BorderColor3 = Color3.fromRGB(0, 0, 0)
+INTRO.Position = UDim2.new(0.5,0,0.5,0)
+INTRO.BorderColor3 = Color3.fromRGB(0,0,0)
 INTRO.Parent = HOHO_Passcheck
--- ... остальная часть UI идентична оригиналу, но для краткости опущена; 
--- ниже только ключевые элементы: GET_KEY, Frame, кнопки
 
 GET_KEY = Instance.new("CanvasGroup")
 GET_KEY.BorderSizePixel = 0
-GET_KEY.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-GET_KEY.AnchorPoint = Vector2.new(0.5, 0.5)
-GET_KEY.Size = UDim2.new(0.359, 0, 0.665, 0)
+GET_KEY.BackgroundColor3 = Color3.fromRGB(30,30,30)
+GET_KEY.AnchorPoint = Vector2.new(0.5,0.5)
+GET_KEY.Size = UDim2.new(0.359,0,0.665,0)
 GET_KEY.ZIndex = 990
 GET_KEY.Name = "GET_KEY"
-GET_KEY.Position = UDim2.new(0.5, 0, 0.5, 0)
-GET_KEY.BorderColor3 = Color3.fromRGB(0, 0, 0)
+GET_KEY.Position = UDim2.new(0.5,0,0.5,0)
+GET_KEY.BorderColor3 = Color3.fromRGB(0,0,0)
 GET_KEY.Parent = HOHO_Passcheck
-Instance.new("UICorner", GET_KEY).CornerRadius = UDim.new(0.075, 0)
+Instance.new("UICorner", GET_KEY).CornerRadius = UDim.new(0.075,0)
 
-Frame = Instance.new("Frame")
+-- Ô nhập key
+local Frame = Instance.new("Frame")
 Frame.BorderSizePixel = 0
-Frame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-Frame.AnchorPoint = Vector2.new(0.5, 0.5)
-Frame.Size = UDim2.new(0.838, 0, 0.113, 0)
-Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-Frame.Position = UDim2.new(0.5, 0, 0.309, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(24,24,24)
+Frame.AnchorPoint = Vector2.new(0.5,0.5)
+Frame.Size = UDim2.new(0.838,0,0.113,0)
+Frame.Position = UDim2.new(0.5,0,0.309,0)
 Frame.ZIndex = 2
 Frame.Parent = GET_KEY
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,7)
 
-Frame_2 = Instance.new("TextBox")
+local Frame_2 = Instance.new("TextBox")
 Frame_2.TextWrapped = true
 Frame_2.BorderSizePixel = 0
-Frame_2.Position = UDim2.new(0.781, 0, 0.498, 0)
+Frame_2.Position = UDim2.new(0.781,0,0.498,0)
 Frame_2.TextScaled = true
-Frame_2.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+Frame_2.BackgroundColor3 = Color3.fromRGB(24,24,24)
 Frame_2.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
 Frame_2.Active = true
-Frame_2.AnchorPoint = Vector2.new(0.5, 0.5)
+Frame_2.AnchorPoint = Vector2.new(0.5,0.5)
 Frame_2.PlaceholderText = "..."
-Frame_2.Size = UDim2.new(0.302, 0, 0.6, 0)
-Frame_2.TextColor3 = Color3.fromRGB(255, 255, 255)
-Frame_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
-Frame_2.Text = "bypass_key_0000"  -- ключ уже в поле
+Frame_2.Size = UDim2.new(0.302,0,0.6,0)
+Frame_2.TextColor3 = Color3.fromRGB(255,255,255)
+Frame_2.BorderColor3 = Color3.fromRGB(0,0,0)
+Frame_2.Text = "bypass_key_0000"  -- Key mặc định, không cần thay đổi
 Frame_2.Selectable = false
 Frame_2.Name = "Textbox"
 Frame_2.Parent = Frame
 
-Submit = Instance.new("TextButton")
+-- Nút Submit
+local Submit = Instance.new("TextButton")
 Submit.TextWrapped = true
 Submit.ZIndex = 2
 Submit.BorderSizePixel = 0
 Submit.AutoButtonColor = false
 Submit.TextScaled = true
-Submit.BackgroundColor3 = Color3.fromRGB(194, 3, 38)
-Submit.Position = UDim2.new(0.5, 0, 0.578, 0)
+Submit.BackgroundColor3 = Color3.fromRGB(194,3,38)
+Submit.Position = UDim2.new(0.5,0,0.578,0)
 Submit.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 Submit.Name = "Submit"
-Submit.AnchorPoint = Vector2.new(0.5, 0.5)
+Submit.AnchorPoint = Vector2.new(0.5,0.5)
 Submit.Active = true
 Submit.TextSize = 20
-Submit.Size = UDim2.new(0.839, 0, 0.095, 0)
-Submit.TextColor3 = Color3.fromRGB(255, 255, 255)
-Submit.BorderColor3 = Color3.fromRGB(0, 0, 0)
+Submit.Size = UDim2.new(0.839,0,0.095,0)
+Submit.TextColor3 = Color3.fromRGB(255,255,255)
+Submit.BorderColor3 = Color3.fromRGB(0,0,0)
 Submit.Text = ""
 Submit.Selectable = false
 Submit.Parent = GET_KEY
-Instance.new("UICorner", Submit).CornerRadius = UDim.new(0, 7)
+Instance.new("UICorner", Submit).CornerRadius = UDim.new(0,7)
 local SubmitTitle = Instance.new("TextLabel")
 SubmitTitle.TextWrapped = true
 SubmitTitle.BorderSizePixel = 0
 SubmitTitle.TextScaled = true
-SubmitTitle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SubmitTitle.BackgroundColor3 = Color3.fromRGB(255,255,255)
 SubmitTitle.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-SubmitTitle.Position = UDim2.new(0.5, 0, 0.48, 0)
+SubmitTitle.Position = UDim2.new(0.5,0,0.48,0)
 SubmitTitle.Name = "Title"
-SubmitTitle.AnchorPoint = Vector2.new(0.5, 0.5)
-SubmitTitle.Size = UDim2.new(1, 0, 0.546, 0)
-SubmitTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-SubmitTitle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+SubmitTitle.AnchorPoint = Vector2.new(0.5,0.5)
+SubmitTitle.Size = UDim2.new(1,0,0.546,0)
+SubmitTitle.TextColor3 = Color3.fromRGB(255,255,255)
+SubmitTitle.BorderColor3 = Color3.fromRGB(0,0,0)
 SubmitTitle.Text = "SUBMIT KEY"
 SubmitTitle.BackgroundTransparency = 1
 SubmitTitle.Parent = Submit
 
-Close = Instance.new("TextButton")
+-- Nút Close
+local Close = Instance.new("TextButton")
 Close.TextWrapped = true
 Close.ZIndex = 2
 Close.BorderSizePixel = 0
 Close.AutoButtonColor = false
 Close.TextScaled = true
-Close.BackgroundColor3 = Color3.fromRGB(248, 4, 46)
-Close.Position = UDim2.new(0.626, 0, 0.871, 0)
+Close.BackgroundColor3 = Color3.fromRGB(248,4,46)
+Close.Position = UDim2.new(0.626,0,0.871,0)
 Close.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 Close.Name = "Close"
-Close.AnchorPoint = Vector2.new(0.5, 0.5)
+Close.AnchorPoint = Vector2.new(0.5,0.5)
 Close.Active = true
 Close.TextSize = 20
-Close.Size = UDim2.new(0.582, 0, 0.081, 0)
-Close.TextColor3 = Color3.fromRGB(255, 255, 255)
-Close.BorderColor3 = Color3.fromRGB(0, 0, 0)
+Close.Size = UDim2.new(0.582,0,0.081,0)
+Close.TextColor3 = Color3.fromRGB(255,255,255)
+Close.BorderColor3 = Color3.fromRGB(0,0,0)
 Close.Text = ""
 Close.BackgroundTransparency = 1
 Close.Selectable = false
 Close.Parent = GET_KEY
-Instance.new("UICorner", Close).CornerRadius = UDim.new(0, 7)
+Instance.new("UICorner", Close).CornerRadius = UDim.new(0,7)
 local CloseTitle = Instance.new("TextLabel")
 CloseTitle.TextWrapped = true
 CloseTitle.BorderSizePixel = 0
 CloseTitle.TextScaled = true
-CloseTitle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+CloseTitle.BackgroundColor3 = Color3.fromRGB(255,255,255)
 CloseTitle.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
-CloseTitle.Position = UDim2.new(0.5, 0, 0.5, 0)
+CloseTitle.Position = UDim2.new(0.5,0,0.5,0)
 CloseTitle.Name = "Title"
-CloseTitle.AnchorPoint = Vector2.new(0.5, 0.5)
-CloseTitle.Size = UDim2.new(1, 0, 0.6, 0)
-CloseTitle.TextColor3 = Color3.fromRGB(248, 4, 46)
-CloseTitle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+CloseTitle.AnchorPoint = Vector2.new(0.5,0.5)
+CloseTitle.Size = UDim2.new(1,0,0.6,0)
+CloseTitle.TextColor3 = Color3.fromRGB(248,4,46)
+CloseTitle.BorderColor3 = Color3.fromRGB(0,0,0)
 CloseTitle.Text = "CLOSE UI"
 CloseTitle.BackgroundTransparency = 1
 CloseTitle.Parent = Close
 
+-- Hiệu ứng hover đơn giản (không bắt buộc)
+Submit.MouseEnter:Connect(function() TweenService:Create(Submit, INFO_DOT25_QUAD, {BackgroundColor3 = Color3.fromRGB(220,10,50)}):Play() end)
+Submit.MouseLeave:Connect(function() TweenService:Create(Submit, INFO_DOT25_QUAD, {BackgroundColor3 = Color3.fromRGB(194,3,38)}):Play() end)
+Close.MouseEnter:Connect(function() TweenService:Create(Close, INFO_DOT25_QUAD, {BackgroundTransparency = 0.5}):Play() end)
+Close.MouseLeave:Connect(function() TweenService:Create(Close, INFO_DOT25_QUAD, {BackgroundTransparency = 1}):Play() end)
+
+-- Khởi chạy giao diện
 GET_KEY.Visible = false
 INTRO.GroupTransparency = 1
 GET_KEY.GroupTransparency = 1
 
--- Активируем UI после загрузки ресурсов
 if (isfile("HoHo_Intro.txt") and (tick() - tonumber(readfile("HoHo_Intro.txt"))) >= 86400) or not isfile("HoHo_Intro.txt") then
-    writefile("HoHo_Intro.txt", tostring(tick()))
-    local preload_content = {}
-    for _,v in ipairs(HOHO_Passcheck:GetDescendants()) do table.insert(preload_content, v) end
-    for _,v in ipairs(PreloadID) do table.insert(preload_content, v) end
-    ContentProvider:PreloadAsync(preload_content)
-    Content.Size = UDim2.new(0,0,1,0)
-    TweenService:Create(INTRO, INFO_DOT25_QUAD, {GroupTransparency = 0}):Play()
-    task.wait(.5)
-    for i = 1, #preload_content do
-        local progress = i / #preload_content
-        TweenService:Create(Content, TweenInfo.new(.1, Enum.EasingStyle.Quad), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
-        task.wait(math.random(1,5)/50)
-    end
-    TweenService:Create(INTRO, INFO_DOT25_QUAD, {GroupTransparency = 1}):Play()
+	writefile("HoHo_Intro.txt", tostring(tick()))
+	local preload_content = {}
+	for _,v in ipairs(HOHO_Passcheck:GetDescendants()) do table.insert(preload_content, v) end
+	for _,v in ipairs(PreloadID) do table.insert(preload_content, v) end
+	ContentProvider:PreloadAsync(preload_content)
+	-- Thanh tiến trình (fake) đã bị lược bỏ để tối giản
 end
 
 GET_KEY.Visible = true
 TweenService:Create(GET_KEY, INFO_DOT25_QUAD, {GroupTransparency = 0}):Play()
 
+-- Kết nối API và bypass
 local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
 api.script_id = isSupport
 
-local destroyUI = function()
-    HOHO_Passcheck:Destroy()
-    if HOHO_Gen4 then HOHO_Gen4:Destroy() end
+local function destroyUI()
+	HOHO_Passcheck:Destroy()
 end
 
-local do_check_key = function(key)
-    key = key:gsub("[\r\n%z]", " "):gsub("[ \t]", ""):gsub("[ \n]", ""):gsub("[ \t]+%f[\r\n%z]", "")
-    local status = api.check_key(key)
-    StarterGui:SetCore("SendNotification", {
-        Title = "Key System",
-        Text = "[".. status.code .. "] " .. status.message,
-        Icon = IS_CUSTOM_UI_MODE and CUSTOM_UI_MODE_DATA.CommunityIcon or "rbxassetid://16276677105"
-    })
-    if status.code == "KEY_VALID" then
-        script_key = key
-        getfenv(0).script_key = key
-        getfenv(1).script_key = key
-        getgenv().script_key = key
-        writefile("HohoKeyV4.txt", key)
-        TweenService:Create(GET_KEY, INFO_DOT25_QUAD, {GroupTransparency = 1}):Play()
-        delay(0.2, destroyUI)
-        -- загружаем главный хаб
-        task.wait(0.3)
-        local mainScript = api:get_script(key)
-        if mainScript then
-            loadstring(mainScript)()
-        else
-            -- fallback: попробуем через публичный URL
-            pcall(function()
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/acsu123/HohoV2/main/HohoMain.lua"))()
-            end)
-        end
-    end
+local function successBypass(key)
+	script_key = key
+	getfenv(0).script_key = key
+	getfenv(1).script_key = key
+	getgenv().script_key = key
+	writefile("HohoKeyV4.txt", key)
+	TweenService:Create(GET_KEY, INFO_DOT25_QUAD, {GroupTransparency = 1}):Play()
+	delay(0.3, destroyUI)
+	-- Tải main hub thật
+	task.wait(0.4)
+	local mainScript = api:get_script(key)  -- vẫn gọi để lấy script thật
+	if mainScript then
+		loadstring(mainScript)()
+	else
+		-- fallback URL dự phòng
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/acsu123/HohoV2/main/HohoMain.lua"))()
+	end
 end
 
--- Подключаем кнопки
+-- Ghi đè hàm check_key để luôn trả về thành công
+api.check_key = function(key)
+	return {code = "KEY_VALID", message = "Bypassed", data = {note = ""}}
+end
+
+-- Xử lý khi bấm nút Submit
 Submit.MouseButton1Click:Connect(function()
-    do_check_key(Frame_2.Text)
+	successBypass(Frame_2.Text)
 end)
 
-Close.MouseButton1Click:Connect(function()
-    destroyUI()
-end)
-
--- Также Enter в текстовом поле вызывает проверку
+-- Xử lý phím Enter trong ô textbox
 Frame_2.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        do_check_key(Frame_2.Text)
-    end
+	if enterPressed then
+		successBypass(Frame_2.Text)
+	end
+end)
+
+-- Xử lý nút Close
+Close.MouseButton1Click:Connect(function()
+	destroyUI()
 end)
