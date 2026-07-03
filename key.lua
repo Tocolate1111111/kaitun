@@ -1,7 +1,8 @@
 --[[
-    Полный обход ключевой системы. Проверка ключа эмулируется,
-    интерфейс ввода ключа остаётся активным, но сразу пропускается.
-    script_key присваивается, основной хаб загружается штатным образом.
+    Полный обход ключевой системы HoHo Hub.
+    UI отображается (кнопки можно нажать), но проверка автоматически 
+    пропускается, после чего загружается основной хаб через Luarmor API.
+    Ключ подставляется автоматически: bypass_key_0000
 --]]
 local GameId = game.GameId
 local Players = game:GetService("Players")
@@ -843,9 +844,6 @@ do
 
 			delay(0.2, destroyUI)
 
-			-- Debris:AddItem(HOHO_Passcheck,.25)
-			-- Debris:AddItem(HOHO_Gen4,.25)
-
 			writefile("HohoKeyV4.txt", key)
 
 			pcall(function()
@@ -858,9 +856,42 @@ do
 		end
 	end
 
-	-- Автоматический обход ключа
+	-- Обход проверки ключа: фейковый ключ мгновенно проходит валидацию
 	api.check_key = function(key)
 		return {code = "KEY_VALID", message = "Bypassed", data = {note = ""}}
 	end
 	do_check_key("bypass_key_0000")
+
+	-- Загрузка основного хаба через Luarmor API (метод get_script)
+	task.wait(0.5) -- дать интерфейсу время исчезнуть
+	local mainScript, err = pcall(function()
+		return api:get_script("bypass_key_0000")
+	end)
+	if mainScript and type(mainScript) == "string" and #mainScript > 0 then
+		local success, err2 = pcall(function()
+			loadstring(mainScript)()
+		end)
+		if not success then
+			warn("Ошибка выполнения основного скрипта:", err2)
+		end
+	else
+		warn("Не удалось получить основной скрипт. Возможно, метод get_script отсутствует. Попробуйте ввести любой ключ вручную.")
+		-- если get_script не сработал, оставляем окно, чтобы пользователь мог сам ввести ключ
+		-- восстанавливаем оригинальную функцию проверки для ручного ввода
+		api.check_key = nil -- удаляем обходную функцию, чтобы работал ввод настоящего ключа
+		-- заново инициализируем обработчики кнопок
+		Submit.MouseButton1Click:Connect(function()
+			local keyInput = Frame_2.Text
+			if keyInput ~= "" then
+				do_check_key(keyInput)
+			end
+		end)
+		Get.MouseButton1Click:Connect(function()
+			setclipboard('https://pandadevelopment.net/getkey?service=hohohub')
+		end)
+		Close.MouseButton1Click:Connect(function()
+			HOHO_Passcheck:Destroy()
+			HOHO_Gen4:Destroy()
+		end)
+	end
 end
